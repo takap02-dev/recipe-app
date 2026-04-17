@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>マイレシピ帳</title>
+  <style>
+    :root {
+      --primary: #e8834a;
+      --primary-dark: #c96930;
+      --primary-light: #fdf0e8;
+      --accent: #f5c842;
+      --text: #2d2d2d;
+      --text-muted: #888;
+      --bg: #f8f5f0;
+      --card: #ffffff;
+      --border: #e8e0d8;
+      --danger: #e05252;
+      --success: #4caf7d;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 6px 24px rgba(0,0,0,0.13);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ======= HEADER ======= */
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 10px;
+    }
+    .header-back {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 18px; font-weight: 700; flex: 1; letter-spacing: 0.3px; }
+    .header-action {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ======= SEARCH & FILTER ======= */
+    .search-area {
+      background: white;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-box {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      font-size: 15px;
+      outline: none;
+      background: var(--bg);
+      transition: border-color 0.2s;
+    }
+    .search-box input:focus { border-color: var(--primary); }
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 17px;
+    }
+    .search-mode-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .genre-scroll {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .genre-scroll::-webkit-scrollbar { display: none; }
+    .genre-chip {
+      flex-shrink: 0;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: white;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .genre-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    /* ======= RECIPE LIST ======= */
+    .recipe-list { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji { font-size: 52px; margin-bottom: 14px; }
+    .empty-state p { font-size: 15px; line-height: 1.6; }
+    .recipe-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 1px solid var(--border);
+    }
+    .recipe-card:active { transform: scale(0.98); }
+    .recipe-thumb {
+      width: 90px;
+      min-height: 90px;
+      background: var(--primary-light);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .recipe-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .recipe-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      min-height: 90px;
+    }
+    .recipe-info { padding: 12px; flex: 1; min-width: 0; }
+    .recipe-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recipe-genres { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .recipe-ingredients-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recipe-source { font-size: 11px; color: var(--primary); margin-top: 4px; }
+
+    /* ======= FAB ======= */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      width: 58px;
+      height: 58px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-size: 28px;
+      box-shadow: var(--shadow-lg);
+      cursor: pointer;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s;
+    }
+    .fab:active { transform: scale(0.93); }
+
+    /* ======= VIEWS ======= */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ======= FORM ======= */
+    .form-container { padding: 16px; padding-bottom: 80px; }
+    .form-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .form-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    input[type="text"], input[type="url"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      background: var(--bg);
+      transition: border-color 0.2s;
+      color: var(--text);
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); background: white; }
+    textarea { resize: none; min-height: 100px; line-height: 1.6; }
+
+    /* Image area */
+    .image-area {
+      width: 100%;
+      min-height: 160px;
+      background: var(--bg);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .image-area:active { border-color: var(--primary); }
+    .image-area img { width: 100%; max-height: 240px; object-fit: cover; }
+    .image-placeholder { text-align: center; color: var(--text-muted); }
+    .image-placeholder .icon { font-size: 36px; margin-bottom: 6px; }
+    .image-placeholder p { font-size: 13px; }
+    #imageInput { display: none; }
+
+    /* Ingredients list */
+    .ingredient-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .ingredient-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 36px;
+      gap: 6px;
+      align-items: center;
+    }
+    .ingredient-row input {
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    .remove-btn {
+      width: 32px;
+      height: 32px;
+      background: #ffe8e8;
+      border: none;
+      border-radius: 8px;
+      color: var(--danger);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .add-ingredient-btn {
+      background: var(--primary-light);
+      border: 1.5px dashed var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 9px;
+      width: 100%;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .ingredient-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 36px;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .ingredient-header span { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+    /* Steps */
+    .step-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .step-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 36px;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .step-row textarea {
+      min-height: 60px;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+
+    /* Genre checkboxes */
+    .genre-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .genre-check {
+      display: none;
+    }
+    .genre-check + label {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: white;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-block;
+      margin: 0;
+      font-weight: 500;
+    }
+    .genre-check:checked + label {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    /* Source tabs */
+    .source-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    .source-tab {
+      flex: 1;
+      padding: 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .source-tab.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Save button */
+    .save-btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .save-btn:active { background: var(--primary-dark); }
+
+    /* ======= DETAIL VIEW ======= */
+    .detail-hero {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+    }
+    .detail-hero-placeholder {
+      width: 100%;
+      height: 180px;
+      background: var(--primary-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+    }
+    .detail-body { padding: 16px; padding-bottom: 80px; }
+    .detail-name { font-size: 24px; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
+    .detail-genres { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .detail-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+    .detail-section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ingredient-table { width: 100%; border-collapse: collapse; }
+    .ingredient-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 15px; }
+    .ingredient-table td:last-child { text-align: right; color: var(--text-muted); font-size: 14px; }
+    .ingredient-table tr:last-child td { border-bottom: none; }
+    .step-item { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+    .step-item:last-child { margin-bottom: 0; }
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 15px; line-height: 1.7; padding-top: 4px; }
+    .source-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      border: 1.5px solid var(--primary);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+    }
+    .detail-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .btn-edit {
+      padding: 13px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-delete {
+      padding: 13px;
+      background: white;
+      color: var(--danger);
+      border: 2px solid var(--danger);
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ======= TOAST ======= */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 999;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ======= MODAL ======= */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: flex-end;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px;
+      width: 100%;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .modal-text { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+    .modal-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-cancel { padding: 13px; background: var(--bg); border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .modal-confirm { padding: 13px; background: var(--danger); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+    /* ======= COUNT ======= */
+    .recipe-count { font-size: 12px; color: var(--text-muted); padding: 4px 16px 0; }
+
+    /* ======= MEMO ======= */
+    .detail-memo { font-size: 15px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+
+<!-- ===== LIST VIEW ===== -->
+<div id="viewList" class="view active">
+  <div class="header">
+    <div class="header-inner">
+      <span class="header-title">🍳 マイレシピ帳</span>
+    </div>
+  </div>
+
+  <div class="search-area">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="料理名・材料で検索..." oninput="filterRecipes()">
+    </div>
+    <div class="search-mode-toggle">
+      <button class="mode-btn active" id="modeNameBtn" onclick="setSearchMode('name')">料理名で検索</button>
+      <button class="mode-btn" id="modeIngBtn" onclick="setSearchMode('ingredient')">材料で検索</button>
+    </div>
+    <div class="genre-scroll" id="genreFilter">
+      <div class="genre-chip active" data-genre="all" onclick="setGenreFilter('all')">すべて</div>
+      <div class="genre-chip" data-genre="和食" onclick="setGenreFilter('和食')">🍱 和食</div>
+      <div class="genre-chip" data-genre="洋食" onclick="setGenreFilter('洋食')">🍽️ 洋食</div>
+      <div class="genre-chip" data-genre="中華" onclick="setGenreFilter('中華')">🥡 中華</div>
+      <div class="genre-chip" data-genre="イタリアン" onclick="setGenreFilter('イタリアン')">🍝 イタリアン</div>
+      <div class="genre-chip" data-genre="アジア料理" onclick="setGenreFilter('アジア料理')">🍜 アジア料理</div>
+      <div class="genre-chip" data-genre="肉料理" onclick="setGenreFilter('肉料理')">🥩 肉料理</div>
+      <div class="genre-chip" data-genre="魚料理" onclick="setGenreFilter('魚料理')">🐟 魚料理</div>
+      <div class="genre-chip" data-genre="野菜料理" onclick="setGenreFilter('野菜料理')">🥦 野菜料理</div>
+      <div class="genre-chip" data-genre="スープ" onclick="setGenreFilter('スープ')">🍲 スープ</div>
+      <div class="genre-chip" data-genre="デザート" onclick="setGenreFilter('デザート')">🍰 デザート</div>
+      <div class="genre-chip" data-genre="その他" onclick="setGenreFilter('その他')">✨ その他</div>
+    </div>
+  </div>
+
+  <div class="recipe-count" id="recipeCount"></div>
+  <div class="recipe-list" id="recipeList"></div>
+  <button class="fab" onclick="showAddForm()">＋</button>
+</div>
+
+<!-- ===== ADD/EDIT VIEW ===== -->
+<div id="viewForm" class="view">
+  <div class="header">
+    <div class="header-inner">
+      <button class="header-back" onclick="showList()">←</button>
+      <span class="header-title" id="formTitle">レシピを追加</span>
+    </div>
+  </div>
+
+  <div class="form-container">
+    <input type="hidden" id="editId">
+
+    <!-- 基本情報 -->
+    <div class="form-section">
+      <div class="form-section-title">基本情報</div>
+      <div class="form-group">
+        <label>料理名 <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="fName" placeholder="例：肉じゃが、カルボナーラ...">
+      </div>
+      <div class="form-group">
+        <label>ジャンル（複数選択可）</label>
+        <div class="genre-checkboxes" id="genreCheckboxes"></div>
+      </div>
+      <div class="form-group">
+        <label>人数・分量</label>
+        <input type="text" id="fServings" placeholder="例：2人分、4個分...">
+      </div>
+    </div>
+
+    <!-- 画像 -->
+    <div class="form-section">
+      <div class="form-section-title">写真・画像</div>
+      <div class="source-tabs">
+        <div class="source-tab active" onclick="setImageMode('upload')">端末から選択</div>
+        <div class="source-tab" onclick="setImageMode('url')">URLで指定</div>
+      </div>
+      <div id="imageUploadArea">
+        <div class="image-area" id="imageDropArea" onclick="document.getElementById('imageInput').click()">
+          <div class="image-placeholder" id="imagePlaceholder">
+            <div class="icon">📷</div>
+            <p>タップして写真を選択</p>
+          </div>
+          <img id="imagePreview" style="display:none">
+        </div>
+        <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+      </div>
+      <div id="imageUrlArea" style="display:none">
+        <input type="url" id="fImageUrl" placeholder="https://...の画像URL">
+      </div>
+    </div>
+
+    <!-- 参照元 -->
+    <div class="form-section">
+      <div class="form-section-title">参照元</div>
+      <div class="form-group">
+        <label>サイト・動画URL</label>
+        <input type="url" id="fUrl" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>参照元名</label>
+        <input type="text" id="fSourceName" placeholder="例：Cookpad、YouTube（○○チャンネル）...">
+      </div>
+    </div>
+
+    <!-- 材料 -->
+    <div class="form-section">
+      <div class="form-section-title">材料</div>
+      <div class="ingredient-header">
+        <span>材料名</span>
+        <span>分量</span>
+        <span></span>
+      </div>
+      <div class="ingredient-list" id="ingredientList"></div>
+      <button class="add-ingredient-btn" onclick="addIngredient()">＋ 材料を追加</button>
+    </div>
+
+    <!-- 調理手順 -->
+    <div class="form-section">
+      <div class="form-section-title">調理手順</div>
+      <div class="step-list" id="stepList"></div>
+      <button class="add-ingredient-btn" onclick="addStep()">＋ 手順を追加</button>
+    </div>
+
+    <!-- メモ -->
+    <div class="form-section">
+      <div class="form-section-title">メモ・コツ</div>
+      <textarea id="fMemo" placeholder="ポイント、アレンジ、注意点など..."></textarea>
+    </div>
+
+    <button class="save-btn" onclick="saveRecipe()">💾 保存する</button>
+  </div>
+</div>
+
+<!-- ===== DETAIL VIEW ===== -->
+<div id="viewDetail" class="view">
+  <div class="header">
+    <div class="header-inner">
+      <button class="header-back" onclick="showList()">←</button>
+      <span class="header-title" id="detailTitle">レシピ詳細</span>
+    </div>
+  </div>
+  <div id="detailContent"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">レシピを削除しますか？</div>
+    <div class="modal-text" id="deleteModalText"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeDeleteModal()">キャンセル</button>
+      <button class="modal-confirm" onclick="confirmDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GENRES = ['和食','洋食','中華','イタリアン','アジア料理','肉料理','魚料理','野菜料理','スープ','デザート','その他'];
+const GENRE_EMOJI = {'和食':'🍱','洋食':'🍽️','中華':'🥡','イタリアン':'🍝','アジア料理':'🍜','肉料理':'🥩','魚料理':'🐟','野菜料理':'🥦','スープ':'🍲','デザート':'🍰','その他':'✨'};
+let recipes = JSON.parse(localStorage.getItem('myrecipes') || '[]');
+let currentFilter = 'all';
+let currentSearch = '';
+let searchMode = 'name';
+let editingId = null;
+let deleteTargetId = null;
+let imageDataUrl = null;
+let imageInputMode = 'upload';
+
+// ============ SAVE / LOAD ============
+function save() { localStorage.setItem('myrecipes', JSON.stringify(recipes)); }
+
+// ============ VIEWS ============
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showList() { showView('viewList'); renderList(); }
+
+function showAddForm() {
+  editingId = null;
+  imageDataUrl = null;
+  document.getElementById('formTitle').textContent = 'レシピを追加';
+  document.getElementById('editId').value = '';
+  document.getElementById('fName').value = '';
+  document.getElementById('fServings').value = '';
+  document.getElementById('fUrl').value = '';
+  document.getElementById('fSourceName').value = '';
+  document.getElementById('fImageUrl').value = '';
+  document.getElementById('fMemo').value = '';
+  document.getElementById('imagePreview').style.display = 'none';
+  document.getElementById('imagePlaceholder').style.display = 'flex';
+  // genre checkboxes
+  buildGenreCheckboxes([]);
+  // ingredients & steps
+  document.getElementById('ingredientList').innerHTML = '';
+  document.getElementById('stepList').innerHTML = '';
+  addIngredient(); addIngredient(); addIngredient();
+  addStep(); addStep();
+  setImageMode('upload');
+  showView('viewForm');
+}
+
+function showEditForm(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  editingId = id;
+  imageDataUrl = r.imageData || null;
+  document.getElementById('formTitle').textContent = 'レシピを編集';
+  document.getElementById('editId').value = id;
+  document.getElementById('fName').value = r.name || '';
+  document.getElementById('fServings').value = r.servings || '';
+  document.getElementById('fUrl').value = r.url || '';
+  document.getElementById('fSourceName').value = r.sourceName || '';
+  document.getElementById('fImageUrl').value = r.imageUrl || '';
+  document.getElementById('fMemo').value = r.memo || '';
+  // image
+  if (r.imageData) {
+    document.getElementById('imagePreview').src = r.imageData;
+    document.getElementById('imagePreview').style.display = 'block';
+    document.getElementById('imagePlaceholder').style.display = 'none';
+    setImageMode('upload');
+  } else if (r.imageUrl) {
+    setImageMode('url');
+  } else {
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imagePlaceholder').style.display = 'flex';
+    setImageMode('upload');
+  }
+  buildGenreCheckboxes(r.genres || []);
+  // ingredients
+  const il = document.getElementById('ingredientList');
+  il.innerHTML = '';
+  (r.ingredients || []).forEach(ing => addIngredient(ing.name, ing.amount));
+  if (!r.ingredients || r.ingredients.length === 0) { addIngredient(); addIngredient(); }
+  // steps
+  const sl = document.getElementById('stepList');
+  sl.innerHTML = '';
+  (r.steps || []).forEach(s => addStep(s));
+  if (!r.steps || r.steps.length === 0) { addStep(); }
+  showView('viewForm');
+}
+
+function showDetail(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('detailTitle').textContent = r.name;
+  let html = '';
+  // Hero image
+  if (r.imageData) {
+    html += `<img src="${r.imageData}" style="width:100%;max-height:260px;object-fit:cover;display:block;" alt="${r.name}">`;
+  } else if (r.imageUrl) {
+    html += `<img src="${r.imageUrl}" style="width:100%;max-height:260px;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="${r.name}"><div class="detail-hero-placeholder">🍳</div>`;
+  } else {
+    html += `<div class="detail-hero-placeholder">🍳</div>`;
+  }
+  html += `<div class="detail-body">`;
+  html += `<div class="detail-name">${escHtml(r.name)}</div>`;
+  if (r.genres && r.genres.length) {
+    html += `<div class="detail-genres">`;
+    r.genres.forEach(g => { html += `<span class="tag">${GENRE_EMOJI[g]||''}${g}</span>`; });
+    html += `</div>`;
+  }
+  if (r.servings) {
+    html += `<div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;">👥 ${escHtml(r.servings)}</div>`;
+  }
+  // Ingredients
+  if (r.ingredients && r.ingredients.length) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">🥕 材料</div>
+      <table class="ingredient-table">`;
+    r.ingredients.forEach(ing => {
+      html += `<tr><td>${escHtml(ing.name)}</td><td>${escHtml(ing.amount||'')}</td></tr>`;
+    });
+    html += `</table></div>`;
+  }
+  // Steps
+  if (r.steps && r.steps.length) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">👨‍🍳 作り方</div>`;
+    r.steps.forEach((s, i) => {
+      html += `<div class="step-item">
+        <div class="step-circle">${i+1}</div>
+        <div class="step-text">${escHtml(s)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  // Memo
+  if (r.memo) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">📝 メモ・コツ</div>
+      <div class="detail-memo">${escHtml(r.memo)}</div>
+    </div>`;
+  }
+  // Source
+  if (r.url || r.sourceName) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">🔗 参照元</div>`;
+    if (r.sourceName && !r.url) {
+      html += `<div style="font-size:15px;">${escHtml(r.sourceName)}</div>`;
+    } else if (r.url) {
+      html += `<a href="${escHtml(r.url)}" target="_blank" rel="noopener noreferrer" class="source-link-btn">
+        🌐 ${escHtml(r.sourceName || 'レシピを見る')} →
+      </a>`;
+    }
+    html += `</div>`;
+  }
+  // Actions
+  html += `<div class="detail-actions">
+    <button class="btn-edit" onclick="showEditForm('${r.id}')">✏️ 編集</button>
+    <button class="btn-delete" onclick="openDeleteModal('${r.id}')">🗑️ 削除</button>
+  </div>`;
+  html += `</div>`;
+  document.getElementById('detailContent').innerHTML = html;
+  showView('viewDetail');
+}
+
+// ============ FORM HELPERS ============
+function buildGenreCheckboxes(selected) {
+  const c = document.getElementById('genreCheckboxes');
+  c.innerHTML = '';
+  GENRES.forEach(g => {
+    const id = 'gc_' + g;
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'genre-check';
+    input.id = id;
+    input.value = g;
+    input.checked = selected.includes(g);
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = (GENRE_EMOJI[g]||'') + ' ' + g;
+    c.appendChild(input);
+    c.appendChild(label);
+  });
+}
+
+function addIngredient(name='', amount='') {
+  const list = document.getElementById('ingredientList');
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.innerHTML = `
+    <input type="text" placeholder="材料名" value="${escAttr(name)}">
+    <input type="text" placeholder="分量" value="${escAttr(amount)}">
+    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function addStep(text='') {
+  const list = document.getElementById('stepList');
+  const idx = list.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'step-row';
+  row.innerHTML = `
+    <div class="step-num">${idx}</div>
+    <textarea placeholder="手順を入力...">${escHtml(text)}</textarea>
+    <button class="remove-btn" onclick="removeStep(this)">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function removeStep(btn) {
+  btn.parentElement.remove();
+  // renumber
+  document.querySelectorAll('#stepList .step-num').forEach((el, i) => { el.textContent = i+1; });
+}
+
+function setImageMode(mode) {
+  imageInputMode = mode;
+  document.querySelectorAll('.source-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&mode==='upload')||(i===1&&mode==='url')));
+  document.getElementById('imageUploadArea').style.display = mode==='upload' ? 'block' : 'none';
+  document.getElementById('imageUrlArea').style.display = mode==='url' ? 'block' : 'none';
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    imageDataUrl = ev.target.result;
+    document.getElementById('imagePreview').src = imageDataUrl;
+    document.getElementById('imagePreview').style.display = 'block';
+    document.getElementById('imagePlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ============ SAVE RECIPE ============
+function saveRecipe() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) { showToast('料理名を入力してください'); return; }
+
+  const genres = Array.from(document.querySelectorAll('.genre-check:checked')).map(c => c.value);
+  const ingredients = Array.from(document.querySelectorAll('#ingredientList .ingredient-row')).map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { name: inputs[0].value.trim(), amount: inputs[1].value.trim() };
+  }).filter(i => i.name);
+  const steps = Array.from(document.querySelectorAll('#stepList textarea')).map(t => t.value.trim()).filter(Boolean);
+
+  let imgData = imageDataUrl;
+  let imgUrl = imageInputMode === 'url' ? document.getElementById('fImageUrl').value.trim() : '';
+
+  const recipe = {
+    id: editingId || Date.now().toString(),
+    name,
+    genres,
+    servings: document.getElementById('fServings').value.trim(),
+    imageData: imgData || null,
+    imageUrl: imgUrl || null,
+    url: document.getElementById('fUrl').value.trim(),
+    sourceName: document.getElementById('fSourceName').value.trim(),
+    ingredients,
+    steps,
+    memo: document.getElementById('fMemo').value.trim(),
+    updatedAt: Date.now()
+  };
+
+  if (editingId) {
+    const idx = recipes.findIndex(r => r.id === editingId);
+    if (idx >= 0) recipes[idx] = recipe;
+  } else {
+    recipe.createdAt = Date.now();
+    recipes.unshift(recipe);
+  }
+  save();
+  showToast(editingId ? '更新しました！' : 'レシピを追加しました！');
+  setTimeout(() => { showDetail(recipe.id); }, 600);
+}
+
+// ============ DELETE ============
+function openDeleteModal(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  deleteTargetId = id;
+  document.getElementById('deleteModalText').textContent = `「${r.name}」を削除します。この操作は取り消せません。`;
+  document.getElementById('deleteModal').classList.add('show');
+}
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+  deleteTargetId = null;
+}
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  recipes = recipes.filter(r => r.id !== deleteTargetId);
+  save();
+  closeDeleteModal();
+  showToast('削除しました');
+  showList();
+}
+
+// ============ FILTER & SEARCH ============
+function setSearchMode(mode) {
+  searchMode = mode;
+  document.getElementById('modeNameBtn').classList.toggle('active', mode==='name');
+  document.getElementById('modeIngBtn').classList.toggle('active', mode==='ingredient');
+  document.getElementById('searchInput').placeholder = mode === 'ingredient' ? '材料名で検索（例：豚肉、トマト...）' : '料理名・材料で検索...';
+  filterRecipes();
+}
+
+function setGenreFilter(genre) {
+  currentFilter = genre;
+  document.querySelectorAll('.genre-chip').forEach(c => c.classList.toggle('active', c.dataset.genre === genre));
+  filterRecipes();
+}
+
+function filterRecipes() {
+  currentSearch = document.getElementById('searchInput').value.trim().toLowerCase();
+  renderList();
+}
+
+function getFilteredRecipes() {
+  return recipes.filter(r => {
+    // genre filter
+    if (currentFilter !== 'all' && !(r.genres || []).includes(currentFilter)) return false;
+    // search
+    if (currentSearch) {
+      if (searchMode === 'ingredient') {
+        return (r.ingredients || []).some(i => i.name.toLowerCase().includes(currentSearch));
+      } else {
+        return r.name.toLowerCase().includes(currentSearch) ||
+          (r.ingredients || []).some(i => i.name.toLowerCase().includes(currentSearch));
+      }
+    }
+    return true;
+  });
+}
+
+// ============ RENDER LIST ============
+function renderList() {
+  const list = document.getElementById('recipeList');
+  const filtered = getFilteredRecipes();
+  const countEl = document.getElementById('recipeCount');
+  countEl.textContent = `${filtered.length}件のレシピ`;
+
+  if (filtered.length === 0) {
+    if (recipes.length === 0) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="emoji">🍽️</div>
+        <p>まだレシピがありません。<br>右下の ＋ ボタンで追加しましょう！</p>
+      </div>`;
+    } else {
+      list.innerHTML = `<div class="empty-state">
+        <div class="emoji">🔍</div>
+        <p>条件に合うレシピが見つかりませんでした。</p>
+      </div>`;
+    }
+    return;
+  }
+
+  list.innerHTML = filtered.map(r => {
+    const imgHtml = r.imageData
+      ? `<img src="${r.imageData}" alt="${escHtml(r.name)}" style="width:100%;height:100%;object-fit:cover;">`
+      : r.imageUrl
+        ? `<img src="${r.imageUrl}" alt="${escHtml(r.name)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+        : `<div class="recipe-thumb-placeholder">🍳</div>`;
+
+    const genres = (r.genres||[]).slice(0,2).map(g => `<span class="tag">${GENRE_EMOJI[g]||''}${g}</span>`).join('');
+    const ingPreview = (r.ingredients||[]).slice(0,4).map(i=>i.name).join('、');
+    const src = r.sourceName ? `<div class="recipe-source">📎 ${escHtml(r.sourceName)}</div>` : '';
+
+    return `<div class="recipe-card" onclick="showDetail('${r.id}')">
+      <div class="recipe-thumb">${imgHtml}</div>
+      <div class="recipe-info">
+        <div class="recipe-name">${escHtml(r.name)}</div>
+        <div class="recipe-genres">${genres}</div>
+        <div class="recipe-ingredients-preview">${escHtml(ingPreview)}</div>
+        ${src}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ UTILS ============
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Init
+renderList();
+</script>
+</body>
+</html>
